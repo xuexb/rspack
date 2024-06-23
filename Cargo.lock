@@ -3354,6 +3354,7 @@ dependencies = [
  "serde_json",
  "swc_config",
  "swc_core",
+ "swc_typescript",
  "tokio",
  "url",
  "xxhash-rust",

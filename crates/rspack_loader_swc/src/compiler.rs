@@ -30,6 +30,7 @@ use swc_core::common::{
 };
 use swc_core::common::{BytePos, SourceFile};
 use swc_core::ecma::ast::{EsVersion, Program};
+use swc_core::ecma::codegen::to_code;
 use swc_core::ecma::parser::{
   parse_file_as_module, parse_file_as_program, parse_file_as_script, Syntax,
 };
@@ -39,6 +40,7 @@ use swc_core::{
   base::{config::Options, try_with_handler},
   common::Globals,
 };
+use swc_typescript::fast_dts::FastDts;
 use url::Url;
 
 fn minify_file_comments(
@@ -332,7 +334,15 @@ impl SwcCompiler {
   pub fn run<R>(&self, op: impl FnOnce() -> R) -> R {
     GLOBALS.set(&self.globals, op)
   }
+  pub fn gen_dts(&self, program: &Program) -> Option<String> {
+    let mut checker = FastDts::new(self.fm.name.clone().into());
+    let mut module = program.clone().expect_module();
 
+    let issues = checker.transform(&mut module);
+    dbg!(issues);
+    let dts_code = to_code(&module);
+    Some(dts_code)
+  }
   pub fn parse<'a, P>(
     &'a self,
     program: Option<Program>,

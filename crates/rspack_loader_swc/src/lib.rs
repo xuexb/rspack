@@ -18,7 +18,9 @@ use rspack_util::source_map::SourceMapKind;
 use swc_config::{config_types::MergingOption, merge::Merge};
 use swc_core::base::config::SourceMapsConfig;
 use swc_core::base::config::{InputSourceMap, OutputCharset, TransformConfig};
+use swc_core::base::BoolConfig;
 use swc_core::ecma::visit::VisitWith;
+use swc_typescript::fast_dts::FastDts;
 use transformer::IdentCollector;
 
 #[derive(Debug)]
@@ -54,7 +56,7 @@ impl Loader<RunnerContext> for SwcLoader {
       return Ok(());
     };
 
-    let swc_options = {
+    let mut swc_options = {
       let mut swc_options = self.options_with_additional.swc_options.clone();
       if swc_options.config.jsc.transform.as_ref().is_some() {
         let mut transform = TransformConfig::default();
@@ -82,7 +84,7 @@ impl Loader<RunnerContext> for SwcLoader {
       }
       swc_options
     };
-
+    swc_options.config.jsc.experimental.emit_isolated_dts = BoolConfig::new(Some(true));
     let source_map_kind: SourceMapKind = match swc_options.config.source_maps {
       Some(SourceMapsConfig::Bool(false)) => SourceMapKind::empty(),
       _ => loader_context.context.module_source_map_kind,
@@ -115,7 +117,16 @@ impl Loader<RunnerContext> for SwcLoader {
         )
       })
       .map_err(AnyhowError::from)?;
-
+    if let Some(dts_code) = c.gen_dts(&built.program) {
+      std::fs::write(
+        resource_path
+          .to_string_lossy()
+          .to_string()
+          .replace(".ts", ".d.ts"),
+        dts_code,
+      )
+      .unwrap();
+    }
     let input_source_map = c
       .input_source_map(&built.input_source_map)
       .map_err(|e| error!(e.to_string()))?;
@@ -134,11 +145,13 @@ impl Loader<RunnerContext> for SwcLoader {
         emit_columns: !source_map_kind.cheap(),
         names: Default::default(),
       },
+
       inline_script: Some(false),
       keep_comments: Some(true),
     };
 
     let program = tokio::task::block_in_place(|| c.transform(built).map_err(AnyhowError::from))?;
+
     if source_map_kind.enabled() {
       let mut v = IdentCollector {
         names: Default::default(),
@@ -146,6 +159,7 @@ impl Loader<RunnerContext> for SwcLoader {
       program.visit_with(&mut v);
       codegen_options.source_map_config.names = v.names;
     }
+
     let ast = c.into_js_ast(program);
     let TransformOutput { code, map } = ast::stringify(&ast, codegen_options)?;
 
