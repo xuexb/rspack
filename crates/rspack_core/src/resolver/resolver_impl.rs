@@ -80,6 +80,7 @@ impl<'a> ResolveInnerOptions<'a> {
 #[derive(Debug)]
 pub struct Resolver {
   resolver: rspack_resolver::Resolver,
+  /// use to load `.pnp.cjs` in project root, we only support on manifest instance in project
   pnp_manifest: Option<Arc<Manifest>>,
 }
 
@@ -298,7 +299,7 @@ fn to_rspack_resolver_options(
     roots,
     builtin_modules: false,
     imports_fields,
-    pnp_manifest: pnp_manifest.map(|x| Arc::unwrap_or_clone(x)),
+    pnp_manifest: pnp_manifest.map(Arc::unwrap_or_clone),
   }
 }
 
