@@ -79,6 +79,7 @@ swc_html            = { version = "=0.146.1" }
 swc_html_minifier   = { version = "=0.143.1", default-features = false }
 swc_node_comments   = { version = "=0.24.0" }
 
+pnp = { version = "0.9.0" }
 
 [workspace.metadata.release]
 rate-limit = { existing-packages = 70, new-packages = 70 }
