@@ -135,7 +135,7 @@ export class JsResolver {
 }
 
 export class JsResolverFactory {
-  constructor()
+  constructor(fs: ThreadsafeNodeInputFS)
   get(type: string, options?: RawResolveOptionsWithDependencyType): JsResolver
 }
 
@@ -164,7 +164,7 @@ export class ModuleDto {
 export type ModuleDTO = ModuleDto
 
 export class Rspack {
-  constructor(options: RawOptions, builtinPlugins: Array<BuiltinPlugin>, registerJsTaps: RegisterJsTaps, outputFilesystem: ThreadsafeNodeFS, resolverFactoryReference: JsResolverFactory)
+  constructor(options: RawOptions, builtinPlugins: Array<BuiltinPlugin>, registerJsTaps: RegisterJsTaps, inputFilesystem: ThreadsafeNodeInputFS, outputFilesystem: ThreadsafeNodeFS, resolverFactoryReference: JsResolverFactory)
   setNonSkippableRegisters(kinds: Array<RegisterJsTapKind>): void
   /** Build with the given option passed to the constructor */
   build(callback: (err: null | Error) => void): void
@@ -279,6 +279,12 @@ export function cleanupGlobalTrace(): void
 
 export interface ContextInfo {
   issuer: string
+}
+
+export interface FileMetadata {
+  isFile: boolean
+  isDir: boolean
+  isSymlink: boolean
 }
 
 export interface JsAdditionalTreeRuntimeRequirementsArg {
@@ -1905,5 +1911,12 @@ export interface ThreadsafeNodeFS {
   mkdir: (name: string) => Promise<void> | void
   mkdirp: (name: string) => Promise<string | void> | string | void
   removeDirAll: (name: string) => Promise<string | void> | string | void
+}
+
+export interface ThreadsafeNodeInputFS {
+  readToString: (name: string) => Promise<string> | string
+  metadata: (name: string) => Promise<FileMetadata> | FileMetadata
+  symlinkMetadata: (path: string) => Promise<FileMetadata> | FileMetadata
+  canonicalize: (path:string) => Promise<string> | string
 }
 

@@ -7,13 +7,14 @@ extern crate rspack_allocator;
 
 use std::pin::Pin;
 use std::sync::Mutex;
+use std::sync::Arc;
 
 use compiler::{Compiler, CompilerState, CompilerStateGuard};
 use napi::bindgen_prelude::*;
 use rspack_binding_options::BuiltinPlugin;
 use rspack_core::{Compilation, PluginExt};
 use rspack_error::Diagnostic;
-use rspack_fs_node::{AsyncNodeWritableFileSystem, ThreadsafeNodeFS};
+use rspack_fs_node::{AsyncNodeWritableFileSystem, ThreadsafeNodeFS, ThreadsafeNodeInputFS};
 
 mod compiler;
 mod panic;
@@ -41,6 +42,7 @@ impl Rspack {
     options: RawOptions,
     builtin_plugins: Vec<BuiltinPlugin>,
     register_js_taps: RegisterJsTaps,
+    input_filesystem: ThreadsafeNodeInputFS,
     output_filesystem: ThreadsafeNodeFS,
     mut resolver_factory_reference: Reference<JsResolverFactory>,
   ) -> Result<Self> {
@@ -67,10 +69,11 @@ impl Rspack {
     let rspack = rspack_core::Compiler::new(
       compiler_options,
       plugins,
-      Box::new(
+      Some(Box::new(
         AsyncNodeWritableFileSystem::new(output_filesystem)
           .map_err(|e| Error::from_reason(format!("Failed to create writable filesystem: {e}",)))?,
-      ),
+      )),
+      Some(Arc::new(input_filesystem)),
       Some(resolver_factory),
       Some(loader_resolver_factory),
     );

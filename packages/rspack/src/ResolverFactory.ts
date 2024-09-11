@@ -1,6 +1,7 @@
 import * as binding from "@rspack/binding";
 import { Resolver } from "./Resolver";
 import { type Resolve, getRawResolve } from "./config";
+import { ThreadsafeReadableNodeFS } from "./FileSystem";
 
 type ResolveOptionsWithDependencyType = Resolve & {
 	dependencyCategory?: string;
@@ -16,8 +17,8 @@ export class ResolverFactory {
 		return resolver_factory.#binding;
 	}
 
-	constructor() {
-		this.#binding = new binding.JsResolverFactory();
+	constructor(fs: ThreadsafeReadableNodeFS) {
+		this.#binding = new binding.JsResolverFactory(fs);
 	}
 
 	get(

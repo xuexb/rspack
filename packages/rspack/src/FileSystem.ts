@@ -1,7 +1,8 @@
 import util from "node:util";
-import type { ThreadsafeNodeFS } from "@rspack/binding";
+import path from 'node:path';
+import type { ThreadsafeNodeFS, ThreadsafeNodeInputFS, FileMetadata } from "@rspack/binding";
 
-import { type OutputFileSystem, mkdirp, rmrf } from "./util/fs";
+import { InputFileSystem, type OutputFileSystem, mkdirp, rmrf } from "./util/fs";
 import { memoizeFn } from "./util/memoize";
 
 const NOOP_FILESYSTEM: ThreadsafeNodeFS = {
@@ -11,7 +12,50 @@ const NOOP_FILESYSTEM: ThreadsafeNodeFS = {
 	mkdirp() {},
 	removeDirAll() {}
 };
-
+class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
+	readToString!: (path: string) => Promise<string> | string;
+	metadata!: (path: string) => Promise<FileMetadata> | FileMetadata;
+	symlinkMetadata!: (path:string) => Promise<FileMetadata> | FileMetadata;
+	canonicalize!: (path:string) => Promise<string> |string;
+	constructor(fs?: InputFileSystem){
+		if (!fs) {
+			// This happens when located in a child compiler.
+			Object.assign(this, NOOP_FILESYSTEM);
+			return;
+		}
+		this.readToString = memoizeFn(() => (p:string) => {
+		   const t= fs.readFileSync!(p, 'utf-8');
+		   return t;
+		})
+		this.canonicalize = memoizeFn(() => (p:string)=> {
+			let linkedPath = fs!.readlinkSync!(p,{});
+			let absolutePath= path.resolve(path.dirname(p), linkedPath);
+			return absolutePath;
+			
+		})
+		this.metadata = memoizeFn(() => (p:string) => {
+			const stat = fs.statSync!(p);
+			let res= {
+				isFile: stat.isFile(),
+				isDir: stat.isDirectory(),
+				isSymlink: stat.isSymbolicLink()
+			};
+			return res;
+		})
+		this.symlinkMetadata = memoizeFn(() => (p:string) => {
+			const stat = fs.lstatSync!(p);
+			let res = {
+				isFile: stat.isFile(),
+				isDir: stat.isDirectory(),
+				isSymlink: stat.isSymbolicLink()
+			};
+			return res;
+		})
+	}
+	static __to_binding(fs?: InputFileSystem) {
+		return new this(fs);
+	}
+}
 class ThreadsafeWritableNodeFS implements ThreadsafeNodeFS {
 	writeFile!: (name: string, content: Buffer) => Promise<void> | void;
 	removeFile!: (name: string) => Promise<void> | void;
@@ -25,7 +69,10 @@ class ThreadsafeWritableNodeFS implements ThreadsafeNodeFS {
 			Object.assign(this, NOOP_FILESYSTEM);
 			return;
 		}
-		this.writeFile = memoizeFn(() => util.promisify(fs.writeFile.bind(fs)));
+		this.writeFile = memoizeFn(() => {
+			
+			return util.promisify(fs.writeFile.bind(fs))
+		});
 		this.removeFile = memoizeFn(() => util.promisify(fs.unlink.bind(fs)));
 		this.mkdir = memoizeFn(() => util.promisify(fs.mkdir.bind(fs)));
 		this.mkdirp = memoizeFn(() => util.promisify(mkdirp.bind(null, fs)));
@@ -37,4 +84,4 @@ class ThreadsafeWritableNodeFS implements ThreadsafeNodeFS {
 	}
 }
 
-export { ThreadsafeWritableNodeFS };
+export { ThreadsafeWritableNodeFS, ThreadsafeReadableNodeFS };

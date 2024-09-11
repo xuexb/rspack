@@ -29,7 +29,7 @@ import {
 import { Chunk } from "./Chunk";
 import { Compilation } from "./Compilation";
 import { ContextModuleFactory } from "./ContextModuleFactory";
-import { ThreadsafeWritableNodeFS } from "./FileSystem";
+import { ThreadsafeReadableNodeFS, ThreadsafeWritableNodeFS } from "./FileSystem";
 import { CodeGenerationResult, Module } from "./Module";
 import { NormalModuleFactory } from "./NormalModuleFactory";
 import { ResolverFactory } from "./ResolverFactory";
@@ -136,7 +136,7 @@ class Compiler {
 
 	running: boolean;
 	idle: boolean;
-	resolverFactory: ResolverFactory;
+	resolverFactory!: ResolverFactory
 	infrastructureLogger: any;
 	watching?: Watching;
 
@@ -229,7 +229,7 @@ class Compiler {
 		this.records = {};
 
 		this.options = options;
-		this.resolverFactory = new ResolverFactory();
+		
 		this.context = context;
 		this.cache = new Cache();
 
@@ -1291,11 +1291,13 @@ class Compiler {
 				}
 			)
 		};
-
+		let binding_input_fs = ThreadsafeReadableNodeFS.__to_binding(this.inputFileSystem!);
+		this.resolverFactory = new ResolverFactory(binding_input_fs);
 		this.#instance = new instanceBinding.Rspack(
 			rawOptions,
 			this.#builtinPlugins,
 			this.#registers,
+			binding_input_fs,
 			ThreadsafeWritableNodeFS.__to_binding(this.outputFileSystem!),
 			ResolverFactory.__to_binding(this.resolverFactory)
 		);
