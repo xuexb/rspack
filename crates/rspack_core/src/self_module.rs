@@ -105,7 +105,7 @@ impl Module for SelfModule {
   async fn build(
     &mut self,
     _build_context: BuildContext<'_>,
-    _: Option<&Compilation>,
+    _: Option<&Compilation>
   ) -> Result<BuildResult> {
     let build_info = BuildInfo {
       strict: true,

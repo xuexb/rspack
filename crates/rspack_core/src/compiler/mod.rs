@@ -88,8 +88,6 @@ impl Compiler {
         debug_info.with_context(options.context.to_string());
       }
     }
-    dbg!(input_filesystem.is_none());
-    use std::path::Path;
     let input_filesystem = input_filesystem.unwrap_or_else(|| Arc::new(NativeFileSystem {}));
     
     let resolver_factory = resolver_factory.unwrap_or_else(|| {
@@ -123,6 +121,7 @@ impl Compiler {
         Some(module_executor),
         Default::default(),
         Default::default(),
+        input_filesystem.clone()
       ),
       output_filesystem,
       plugin_driver,
@@ -161,6 +160,7 @@ impl Compiler {
         Some(module_executor),
         Default::default(),
         Default::default(),
+        self.input_filesystem.clone()
       ),
     );
 

@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use napi_derive::napi;
 use rspack_core::{Resolve, ResolverFactory};
-use rspack_fs::{NativeFileSystem, ReadableFileSystem};
 use rspack_fs_node::ThreadsafeNodeInputFS;
 
 use crate::{

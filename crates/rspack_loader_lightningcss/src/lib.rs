@@ -43,6 +43,7 @@ impl LightningCssLoader {
   }
 
   async fn loader_impl(&self, loader_context: &mut LoaderContext<RunnerContext>) -> Result<()> {
+    
     let Some(resource_path) = loader_context.resource_path() else {
       return Ok(());
     };

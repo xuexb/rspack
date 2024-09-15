@@ -1,5 +1,4 @@
-use std::borrow::Cow;
-use std::iter;
+use std::{borrow::Cow, iter};
 
 use rspack_collections::{Identifiable, Identifier};
 use rspack_error::{error, impl_empty_diagnosable_trait, Diagnostic, Result};
@@ -457,7 +456,7 @@ impl Module for ExternalModule {
   async fn build(
     &mut self,
     _build_context: BuildContext<'_>,
-    _: Option<&Compilation>,
+    _: Option<&Compilation>
   ) -> Result<BuildResult> {
     let (_, external_type) = self.get_request_and_external_type();
 

@@ -5,7 +5,7 @@ use std::{
   path::PathBuf,
   sync::{atomic::AtomicU32, Arc},
 };
-
+use derivative::Derivative;
 use dashmap::DashSet;
 use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
@@ -14,6 +14,7 @@ use rspack_collections::{
   Identifiable, Identifier, IdentifierDashMap, IdentifierMap, IdentifierSet, UkeySet,
 };
 use rspack_error::{error, Diagnostic, Result, Severity};
+use rspack_fs::ReadableFileSystem;
 use rspack_futures::FuturesResults;
 use rspack_hash::{RspackHash, RspackHashDigest};
 use rspack_hook::define_hook;
@@ -129,8 +130,8 @@ impl Default for CompilationId {
 type ValueCacheVersions = HashMap<String, String>;
 
 static COMPILATION_ID: AtomicU32 = AtomicU32::new(0);
-
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct Compilation {
   /// get_compilation_hooks(compilation.id)
   id: CompilationId,
@@ -191,6 +192,8 @@ pub struct Compilation {
   pub modified_files: HashSet<PathBuf>,
   pub removed_files: HashSet<PathBuf>,
   make_artifact: MakeArtifact,
+  #[derivative(Debug="ignore")]
+  pub input_filesystem: Arc<dyn ReadableFileSystem>
 }
 
 impl Compilation {
@@ -226,6 +229,7 @@ impl Compilation {
     module_executor: Option<ModuleExecutor>,
     modified_files: HashSet<PathBuf>,
     removed_files: HashSet<PathBuf>,
+    input_filesystem: Arc<dyn ReadableFileSystem>
   ) -> Self {
     Self {
       id: CompilationId::new(),
@@ -280,6 +284,7 @@ impl Compilation {
       make_artifact: Default::default(),
       modified_files,
       removed_files,
+      input_filesystem
     }
   }
 
