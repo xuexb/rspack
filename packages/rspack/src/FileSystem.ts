@@ -23,17 +23,17 @@ class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 			Object.assign(this, NOOP_FILESYSTEM);
 			return;
 		}
-		this.readToString = memoizeFn(() => (p:string) => {
-		   const t= fs.readFileSync!(p, 'utf-8');
-		   return t;
-		})
-		this.canonicalize = memoizeFn(() => (p:string)=> {
+		this.readToString =(p:string) => {
+		   const buffer= fs.readFileSync!(p);
+		   return buffer.toString('utf8')
+		};
+		this.canonicalize = (p:string)=> {
 			let linkedPath = fs!.readlinkSync!(p,{});
 			let absolutePath= path.resolve(path.dirname(p), linkedPath);
 			return absolutePath;
 			
-		})
-		this.metadata = memoizeFn(() => (p:string) => {
+		};
+		this.metadata =(p:string) => {
 			const stat = fs.statSync!(p);
 			let res= {
 				isFile: stat.isFile(),
@@ -41,8 +41,8 @@ class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 				isSymlink: stat.isSymbolicLink()
 			};
 			return res;
-		})
-		this.symlinkMetadata = memoizeFn(() => (p:string) => {
+		};
+		this.symlinkMetadata = (p:string) => {
 			const stat = fs.lstatSync!(p);
 			let res = {
 				isFile: stat.isFile(),
@@ -50,7 +50,7 @@ class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 				isSymlink: stat.isSymbolicLink()
 			};
 			return res;
-		})
+		};
 	}
 	static __to_binding(fs?: InputFileSystem) {
 		return new this(fs);

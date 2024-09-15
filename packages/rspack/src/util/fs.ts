@@ -219,7 +219,7 @@ export type ReadFile = {
 export type ReadFileSync = {
 	(
 		path: PathOrFileDescriptor,
-		options: {
+		options?: {
 			encoding: null | undefined;
 			flag?: string;
 		} | null
