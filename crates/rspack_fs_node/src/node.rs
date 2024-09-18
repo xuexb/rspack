@@ -1,6 +1,7 @@
-use std::{io, path::PathBuf};
-
-use napi::{bindgen_prelude::Buffer, Env, JsFunction, Ref};
+use std::{io, path::PathBuf, thread::current};
+use tracing::instrument;
+use futures::future::BoxFuture;
+use napi::{bindgen_prelude::{spawn_blocking, Buffer}, tokio::{self, runtime, spawn, task::block_in_place}, Env, JsFunction, Ref};
 use napi_derive::napi;
 use rspack_fs::sync::{FileMetadata, ResolverFileSystem};
 
@@ -60,7 +61,7 @@ pub(crate) struct NodeFSRef {
 use napi::Either;
 use rspack_fs::ReadableFileSystem;
 use rspack_napi::threadsafe_function::ThreadsafeFunction;
-use rspack_paths::AssertUtf8;
+use rspack_paths::{AssertUtf8, Utf8Path};
 
 #[napi(object, object_to_js = false, js_name = "ThreadsafeNodeFS")]
 pub struct ThreadsafeNodeFS {
@@ -101,11 +102,15 @@ impl From<NapiFileMetadata> for FileMetadata {
   }
 }
 #[napi(object, object_to_js = false, js_name = "ThreadsafeNodeInputFS")]
+#[derive(Debug)]
 pub struct ThreadsafeNodeInputFS {
   // #[napi(ts_type = "(name: string) => Promise<string> | string")]
   // pub read_to_string: ThreadsafeFunction<String,String>,
   #[napi(ts_type = "(name: string) => Promise<Buffer> | Buffer")]
   pub read_to_buffer: ThreadsafeFunction<String, Buffer>,
+  #[napi(ts_type = "(name: string) => Promise<Buffer> | Buffer")]
+  pub read_to_buffer_async: ThreadsafeFunction<String, Buffer>,
+
   #[napi(ts_type = "(name: string) => Promise<FileMetadata> | FileMetadata")]
   pub metadata: ThreadsafeFunction<String, NapiFileMetadata>,
   #[napi(ts_type = "(path: string) => Promise<FileMetadata> | FileMetadata")]
@@ -122,12 +127,30 @@ impl ReadableFileSystem for ThreadsafeNodeInputFS {
       .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
       .map(|x| x.into())
   }
+  
+  fn read_to_buffer_async<'a>(&'a self, dir: &'a Utf8Path) -> BoxFuture<'a, rspack_fs::Result<Vec<u8>>> {
+    let fut = async {
+      let dir = dir.as_str().to_string();
+      self.read_to_buffer_async.call(dir).await.map_err(|e| {
+        rspack_fs::Error::Io(std::io::Error::new(
+          std::io::ErrorKind::Other,
+          e.to_string(),
+        ))
+      }).map(|x| x.into())
+    };
+    Box::pin(fut)
+  }
 }
 impl ResolverFileSystem for ThreadsafeNodeInputFS {
+  #[instrument(name="binding_async_fs_read_to_string")]
   fn read_to_string(&self, path: &std::path::Path) -> std::io::Result<String> {
-    self
-      .read_to_buffer(path)
-      .map(|x| String::from_utf8_lossy(&x).to_string())
+    block_in_place(|| {
+      let fut = async {
+        self.read_to_buffer_async(path.assert_utf8()).await.map(|x| String::from_utf8_lossy(&x).to_string())
+      };
+      tokio::runtime::Handle::current().block_on(fut)
+    }).map_err(|err| io::Error::new(io::ErrorKind::Other,"oh no"))
+
   }
 
   fn metadata(&self, path: &std::path::Path) -> std::io::Result<FileMetadata> {

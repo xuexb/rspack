@@ -1,3 +1,6 @@
+use std::path;
+
+use futures::future::BoxFuture;
 use rspack_paths::Utf8Path;
 pub use rspack_resolver::FileMetadata;
 pub use rspack_resolver::FileSystem as ResolverFileSystem;
@@ -28,6 +31,7 @@ pub trait WritableFileSystem {
 
 pub trait ReadableFileSystem: ResolverFileSystem + Send + Sync {
   fn read_to_buffer(&self, path: &std::path::Path) -> std::io::Result<Vec<u8>>;
+  fn read_to_buffer_async<'a>(&'a self, dir: &'a Utf8Path) -> BoxFuture<'a, Result<Vec<u8>>>;
 }
 
 /// Readable and writable file system representation.

@@ -32,6 +32,11 @@ impl ReadableFileSystem for NativeFileSystem {
   fn read_to_buffer(&self, path: &std::path::Path) -> std::io::Result<Vec<u8>> {
     fs::read(path)
   }
+  fn read_to_buffer_async<'a>(&'a self, dir: &'a Utf8Path) -> BoxFuture<'a, Result<Vec<u8>>> {
+    let dir = dir.to_path_buf();
+    let fut = async move { tokio::fs::read(dir).await.map_err(Error::from) };
+    Box::pin(fut)
+  }
 }
 impl ResolverFileSystem for NativeFileSystem {
   fn read_to_string(&self, path: &Path) -> io::Result<String> {

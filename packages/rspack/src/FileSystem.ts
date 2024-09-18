@@ -15,6 +15,7 @@ const NOOP_FILESYSTEM: ThreadsafeNodeFS = {
 class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 	//readToString!: (path: string) => Promise<string> | string;
 	readToBuffer!: (path: string) => Promise<Buffer> | Buffer;
+	readToBufferAsync!: (path: string) => Promise<Buffer> | Buffer;
 	metadata!: (path: string) => Promise<FileMetadata> | FileMetadata;
 	symlinkMetadata!: (path:string) => Promise<FileMetadata> | FileMetadata;
 	canonicalize!: (path:string) => Promise<string> |string;
@@ -26,8 +27,11 @@ class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 		}
 		this.readToBuffer =(p:string) => {
 		   const buffer = fs.readFileSync!(p);
+		   console.log('xxx:');
 		   return buffer
 		};
+		this.readToBufferAsync = util.promisify(fs.readFile) as any;
+		
 		
 		this.canonicalize = (p:string)=> {
 			const linkedPath = fs!.readlinkSync!(p,{});

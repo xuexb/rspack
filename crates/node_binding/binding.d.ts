@@ -1915,6 +1915,7 @@ export interface ThreadsafeNodeFS {
 
 export interface ThreadsafeNodeInputFS {
   readToBuffer: (name: string) => Promise<Buffer> | Buffer
+  readToBufferAsync: (name: string) => Promise<Buffer> | Buffer
   metadata: (name: string) => Promise<FileMetadata> | FileMetadata
   symlinkMetadata: (path: string) => Promise<FileMetadata> | FileMetadata
   canonicalize: (path:string) => Promise<string> | string

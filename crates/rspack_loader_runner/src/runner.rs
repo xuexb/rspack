@@ -42,7 +42,7 @@ async fn process_resource<Context: Send>(
       && !resource_path.as_str().is_empty()
     {
       let result = fs
-        .read_to_buffer(resource_path.as_std_path())
+        .read_to_buffer_async(resource_path).await
         .map_err(|e| error!("{e}, failed to read {resource_path}"))?;
       loader_context.content = Some(Content::from(result));
     } else if !resource_data.get_scheme().is_none() {
