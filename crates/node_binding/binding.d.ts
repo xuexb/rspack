@@ -135,7 +135,7 @@ export class JsResolver {
 }
 
 export class JsResolverFactory {
-  constructor(fs: ThreadsafeNodeInputFS)
+  constructor(fs?: ThreadsafeNodeInputFS | undefined | null)
   get(type: string, options?: RawResolveOptionsWithDependencyType): JsResolver
 }
 
@@ -164,7 +164,7 @@ export class ModuleDto {
 export type ModuleDTO = ModuleDto
 
 export class Rspack {
-  constructor(options: RawOptions, builtinPlugins: Array<BuiltinPlugin>, registerJsTaps: RegisterJsTaps, inputFilesystem: ThreadsafeNodeInputFS, outputFilesystem: ThreadsafeNodeFS, resolverFactoryReference: JsResolverFactory)
+  constructor(options: RawOptions, builtinPlugins: Array<BuiltinPlugin>, registerJsTaps: RegisterJsTaps, inputFilesystem: ThreadsafeNodeInputFS | undefined | null, outputFilesystem: ThreadsafeNodeFS, resolverFactoryReference: JsResolverFactory)
   setNonSkippableRegisters(kinds: Array<RegisterJsTapKind>): void
   /** Build with the given option passed to the constructor */
   build(callback: (err: null | Error) => void): void

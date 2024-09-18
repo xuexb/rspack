@@ -17,7 +17,7 @@ export class ResolverFactory {
 		return resolver_factory.#binding;
 	}
 
-	constructor(fs: ThreadsafeReadableNodeFS) {
+	constructor(fs?: ThreadsafeReadableNodeFS) {
 		this.#binding = new binding.JsResolverFactory(fs);
 	}
 

@@ -14,6 +14,7 @@ use napi::bindgen_prelude::*;
 use rspack_binding_options::BuiltinPlugin;
 use rspack_core::{Compilation, PluginExt};
 use rspack_error::Diagnostic;
+use rspack_fs::ReadableFileSystem;
 use rspack_fs_node::{AsyncNodeWritableFileSystem, ThreadsafeNodeFS, ThreadsafeNodeInputFS};
 
 mod compiler;
@@ -42,7 +43,7 @@ impl Rspack {
     options: RawOptions,
     builtin_plugins: Vec<BuiltinPlugin>,
     register_js_taps: RegisterJsTaps,
-    input_filesystem: ThreadsafeNodeInputFS,
+    input_filesystem: Option<ThreadsafeNodeInputFS>,
     output_filesystem: ThreadsafeNodeFS,
     mut resolver_factory_reference: Reference<JsResolverFactory>,
   ) -> Result<Self> {
@@ -59,9 +60,7 @@ impl Rspack {
     let compiler_options: rspack_core::CompilerOptions = options
       .try_into()
       .map_err(|e| Error::from_reason(format!("{e}")))?;
-
-    tracing::info!("normalized_options: {:#?}", &compiler_options);
-
+    let input_fs: Option<Arc<dyn ReadableFileSystem + Send + Sync >>= input_filesystem.map(|x| Arc::new(x) as _);
     let resolver_factory =
       (*resolver_factory_reference).get_resolver_factory(compiler_options.resolve.clone());
     let loader_resolver_factory = (*resolver_factory_reference)
@@ -73,7 +72,7 @@ impl Rspack {
         AsyncNodeWritableFileSystem::new(output_filesystem)
           .map_err(|e| Error::from_reason(format!("Failed to create writable filesystem: {e}",)))?,
       )),
-      Some(Arc::new(input_filesystem)),
+      input_fs,
       Some(resolver_factory),
       Some(loader_resolver_factory),
     );
