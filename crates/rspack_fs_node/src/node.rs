@@ -150,7 +150,7 @@ impl ResolverFileSystem for ThreadsafeNodeInputFS {
     self
       .canonicalize
       .blocking_call_with_sync(path.assert_utf8().to_string())
-      .map(|x| PathBuf::from(x))
+      .map(PathBuf::from)
       .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
   }
 }

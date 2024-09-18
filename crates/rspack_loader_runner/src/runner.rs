@@ -26,9 +26,8 @@ impl<Context> LoaderContext<Context> {
 
 async fn process_resource<Context: Send>(
   loader_context: &mut LoaderContext<Context>,
-  fs: Arc<dyn ReadableFileSystem>
+  fs: Arc<dyn ReadableFileSystem>,
 ) -> Result<()> {
-  
   if let Some(plugin) = &loader_context.plugin
     && let Some(processed_resource) = plugin
       .process_resource(&loader_context.resource_data)
@@ -42,7 +41,8 @@ async fn process_resource<Context: Send>(
     if let Some(resource_path) = resource_data.resource_path.as_deref()
       && !resource_path.as_str().is_empty()
     {
-      let result = fs.read_to_buffer(resource_path.as_std_path())
+      let result = fs
+        .read_to_buffer(resource_path.as_std_path())
         .map_err(|e| error!("{e}, failed to read {resource_path}"))?;
       loader_context.content = Some(Content::from(result));
     } else if !resource_data.get_scheme().is_none() {
@@ -104,7 +104,7 @@ pub async fn run_loaders<Context: 'static + Send>(
   resource_data: Arc<ResourceData>,
   plugins: Option<Arc<dyn LoaderRunnerPlugin<Context = Context>>>,
   context: Context,
-  fs: Arc<dyn ReadableFileSystem>
+  fs: Arc<dyn ReadableFileSystem>,
 ) -> Result<TWithDiagnosticArray<LoaderResult>> {
   let loaders = loaders
     .into_iter()
@@ -147,7 +147,7 @@ pub async fn run_loaders<Context: 'static + Send>(
         }
       }
       State::ProcessResource => {
-        process_resource(&mut cx,fs.clone()).await?;
+        process_resource(&mut cx, fs.clone()).await?;
         cx.loader_index = cx.loader_items.len() as i32 - 1;
         cx.state.transition(State::Normal);
       }
@@ -237,6 +237,7 @@ mod test {
   use once_cell::sync::OnceCell;
   use rspack_collections::{Identifiable, Identifier};
   use rspack_error::Result;
+  use rspack_fs::NativeFileSystem;
 
   use super::{run_loaders, Loader, LoaderContext, ResourceData};
   use crate::{content::Content, plugin::LoaderRunnerPlugin, AdditionalData};
@@ -419,6 +420,7 @@ mod test {
       rs.clone(),
       Some(Arc::new(TestContentPlugin)),
       (),
+      Arc::new(NativeFileSystem {})
     )
     .await
     .err()
@@ -436,6 +438,7 @@ mod test {
       rs.clone(),
       Some(Arc::new(TestContentPlugin)),
       (),
+      Arc::new(NativeFileSystem {})
     )
     .await
     .err()
@@ -515,6 +518,7 @@ mod test {
       rs,
       Some(Arc::new(TestContentPlugin)),
       (),
+      Arc::new(NativeFileSystem {}),
     )
     .await
     .unwrap();
@@ -577,6 +581,7 @@ mod test {
       rs,
       Some(Arc::new(TestContentPlugin)),
       (),
+      Arc::new(NativeFileSystem {})
     )
     .await
     .err()
