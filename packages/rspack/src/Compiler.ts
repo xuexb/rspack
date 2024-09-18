@@ -1291,8 +1291,8 @@ class Compiler {
 				}
 			)
 		};
-		//let binding_input_fs = this.inputFileSystem ? ThreadsafeReadableNodeFS.__to_binding(this.inputFileSystem!) : undefined;
-		let binding_input_fs = undefined;
+		let binding_input_fs = this.inputFileSystem ? ThreadsafeReadableNodeFS.__to_binding(this.inputFileSystem!) : undefined;
+		binding_input_fs = undefined;
 		this.resolverFactory = new ResolverFactory(binding_input_fs);
 		this.#instance = new instanceBinding.Rspack(
 			rawOptions,

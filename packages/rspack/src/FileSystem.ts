@@ -25,7 +25,6 @@ class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 			return;
 		}
 		this.readToBuffer =(p:string) => {
-			console.log('p:',p)
 		   const buffer = fs.readFileSync!(p);
 		   return buffer
 		};
