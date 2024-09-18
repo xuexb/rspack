@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use napi_derive::napi;
 use rspack_core::{Resolve, ResolverFactory};
+use rspack_fs::ReadableFileSystem;
 use rspack_fs_node::ThreadsafeNodeInputFS;
 
 use crate::{
@@ -15,17 +16,17 @@ use crate::{
 pub struct JsResolverFactory {
   pub(crate) resolver_factory: Option<Arc<ResolverFactory>>,
   pub(crate) loader_resolver_factory: Option<Arc<ResolverFactory>>,
-  pub(crate) input_filesystem: Option<Arc<ThreadsafeNodeInputFS>>,
+  pub(crate) input_filesystem: Option<Arc<dyn ReadableFileSystem>>,
 }
 
 #[napi]
 impl JsResolverFactory {
   #[napi(constructor)]
-  pub fn new(fs: Arc<ThreadsafeNodeInputFS>) -> napi::Result<Self> {
+  pub fn new(fs: Option<Arc<ThreadsafeNodeInputFS>>) -> napi::Result<Self> {
     Ok(Self {
       resolver_factory: None,
       loader_resolver_factory: None,
-      input_filesystem:Some(fs)
+      input_filesystem:fs,
     })
   }
 
@@ -35,7 +36,7 @@ impl JsResolverFactory {
       Some(resolver_factory) => resolver_factory.clone(),
       
       None => {
-        let resolver_factory = Arc::new(ResolverFactory::new(resolve_options, self.input_filesystem.clone().unwrap()));
+        let resolver_factory = Arc::new(ResolverFactory::new(resolve_options, self.input_filesystem.clone().expect("")));
         self.resolver_factory = Some(resolver_factory.clone());
         resolver_factory
       }
