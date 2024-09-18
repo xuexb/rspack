@@ -1,6 +1,6 @@
 use rspack_paths::Utf8Path;
+pub use rspack_resolver::FileMetadata;
 pub use rspack_resolver::FileSystem as ResolverFileSystem;
-pub use rspack_resolver::{FileMetadata};
 
 // pubResolverFileSystem
 use super::Result;
@@ -26,8 +26,9 @@ pub trait WritableFileSystem {
   fn write(&self, file: &Utf8Path, data: &[u8]) -> Result<()>;
 }
 
-
-pub trait ReadableFileSystem: ResolverFileSystem + Send + Sync {}
+pub trait ReadableFileSystem: ResolverFileSystem + Send + Sync {
+  fn read_to_buffer(&self, path: &std::path::Path) -> std::io::Result<Vec<u8>>;
+}
 
 /// Readable and writable file system representation.
 pub trait FileSystem: ReadableFileSystem + WritableFileSystem {}

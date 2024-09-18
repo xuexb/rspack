@@ -1,5 +1,6 @@
 use std::{
-  fs, io,
+  fs::{self},
+  io,
   path::{Path, PathBuf},
 };
 
@@ -27,7 +28,11 @@ impl WritableFileSystem for NativeFileSystem {
   }
 }
 
-impl ReadableFileSystem for NativeFileSystem {}
+impl ReadableFileSystem for NativeFileSystem {
+  fn read_to_buffer(&self, path: &std::path::Path) -> std::io::Result<Vec<u8>> {
+    fs::read(path)
+  }
+}
 impl ResolverFileSystem for NativeFileSystem {
   fn read_to_string(&self, path: &Path) -> io::Result<String> {
     fs::read_to_string(path)

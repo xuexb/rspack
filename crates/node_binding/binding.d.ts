@@ -1914,7 +1914,7 @@ export interface ThreadsafeNodeFS {
 }
 
 export interface ThreadsafeNodeInputFS {
-  readToString: (name: string) => Promise<string> | string
+  readToBuffer: (name: string) => Promise<Buffer> | Buffer
   metadata: (name: string) => Promise<FileMetadata> | FileMetadata
   symlinkMetadata: (path: string) => Promise<FileMetadata> | FileMetadata
   canonicalize: (path:string) => Promise<string> | string

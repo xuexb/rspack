@@ -13,7 +13,8 @@ const NOOP_FILESYSTEM: ThreadsafeNodeFS = {
 	removeDirAll() {}
 };
 class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
-	readToString!: (path: string) => Promise<string> | string;
+	//readToString!: (path: string) => Promise<string> | string;
+	readToBuffer!: (path: string) => Promise<Buffer> | Buffer;
 	metadata!: (path: string) => Promise<FileMetadata> | FileMetadata;
 	symlinkMetadata!: (path:string) => Promise<FileMetadata> | FileMetadata;
 	canonicalize!: (path:string) => Promise<string> |string;
@@ -23,10 +24,11 @@ class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 			Object.assign(this, NOOP_FILESYSTEM);
 			return;
 		}
-		this.readToString =(p:string) => {
-		   const buffer= fs.readFileSync!(p);
-		   return buffer.toString('utf8')
+		this.readToBuffer =(p:string) => {
+		   const buffer = fs.readFileSync!(p);
+		   return buffer
 		};
+		
 		this.canonicalize = (p:string)=> {
 			let linkedPath = fs!.readlinkSync!(p,{});
 			let absolutePath= path.resolve(path.dirname(p), linkedPath);

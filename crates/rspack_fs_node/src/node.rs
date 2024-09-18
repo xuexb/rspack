@@ -1,8 +1,8 @@
-use std::{io, path::{PathBuf}};
+use std::{io, path::PathBuf};
 
 use napi::{bindgen_prelude::Buffer, Env, JsFunction, Ref};
 use napi_derive::napi;
-use rspack_fs::sync::{ResolverFileSystem,FileMetadata};
+use rspack_fs::sync::{FileMetadata, ResolverFileSystem};
 
 pub(crate) struct JsFunctionRef {
   env: Env,
@@ -62,8 +62,6 @@ use rspack_fs::ReadableFileSystem;
 use rspack_napi::threadsafe_function::ThreadsafeFunction;
 use rspack_paths::AssertUtf8;
 
-
-
 #[napi(object, object_to_js = false, js_name = "ThreadsafeNodeFS")]
 pub struct ThreadsafeNodeFS {
   #[napi(ts_type = "(name: string, content: Buffer) => Promise<void> | void")]
@@ -78,7 +76,7 @@ pub struct ThreadsafeNodeFS {
   pub remove_dir_all: ThreadsafeFunction<String, Either<String, ()>>,
 }
 
-#[napi(object, js_name="FileMetadata")]
+#[napi(object, js_name = "FileMetadata")]
 pub struct NapiFileMetadata {
   pub is_file: bool,
   pub is_dir: bool,
@@ -86,51 +84,73 @@ pub struct NapiFileMetadata {
 }
 impl From<FileMetadata> for NapiFileMetadata {
   fn from(value: FileMetadata) -> Self {
-      Self {
-        is_dir: value.is_dir,
-        is_file: value.is_file,
-        is_symlink: value.is_symlink
-      }
+    Self {
+      is_dir: value.is_dir,
+      is_file: value.is_file,
+      is_symlink: value.is_symlink,
+    }
   }
 }
 impl From<NapiFileMetadata> for FileMetadata {
   fn from(value: NapiFileMetadata) -> Self {
-      Self {
-        is_dir: value.is_dir,
-        is_file: value.is_file,
-        is_symlink: value.is_symlink
-      }
+    Self {
+      is_dir: value.is_dir,
+      is_file: value.is_file,
+      is_symlink: value.is_symlink,
+    }
   }
 }
 #[napi(object, object_to_js = false, js_name = "ThreadsafeNodeInputFS")]
 pub struct ThreadsafeNodeInputFS {
-  #[napi(ts_type = "(name: string) => Promise<string> | string")]
-  pub read_to_string: ThreadsafeFunction<String,String>,
+  // #[napi(ts_type = "(name: string) => Promise<string> | string")]
+  // pub read_to_string: ThreadsafeFunction<String,String>,
+  #[napi(ts_type = "(name: string) => Promise<Buffer> | Buffer")]
+  pub read_to_buffer: ThreadsafeFunction<String, Buffer>,
   #[napi(ts_type = "(name: string) => Promise<FileMetadata> | FileMetadata")]
   pub metadata: ThreadsafeFunction<String, NapiFileMetadata>,
   #[napi(ts_type = "(path: string) => Promise<FileMetadata> | FileMetadata")]
-  pub symlink_metadata: ThreadsafeFunction<String,NapiFileMetadata>,
+  pub symlink_metadata: ThreadsafeFunction<String, NapiFileMetadata>,
   #[napi(ts_type = "(path:string) => Promise<string> | string")]
-  pub canonicalize: ThreadsafeFunction<String,String>
+  pub canonicalize: ThreadsafeFunction<String, String>,
 }
 
 impl ReadableFileSystem for ThreadsafeNodeInputFS {
-
+  fn read_to_buffer(&self, path: &std::path::Path) -> std::io::Result<Vec<u8>> {
+    self
+      .read_to_buffer
+      .blocking_call_with_sync(path.assert_utf8().to_string())
+      .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+      .map(|x| x.into())
+  }
 }
 impl ResolverFileSystem for ThreadsafeNodeInputFS {
-    fn read_to_string(&self, path: &std::path::Path) -> std::io::Result<String> {
-        self.read_to_string.blocking_call_with_sync(path.assert_utf8().to_string()).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-    }
+  fn read_to_string(&self, path: &std::path::Path) -> std::io::Result<String> {
+    self
+      .read_to_buffer(path)
+      .map(|x| String::from_utf8_lossy(&x).to_string())
+  }
 
-    fn metadata(&self, path: &std::path::Path) -> std::io::Result<FileMetadata> {
-        self.metadata.blocking_call_with_sync(path.assert_utf8().to_string()).map(FileMetadata::from).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-    }
+  fn metadata(&self, path: &std::path::Path) -> std::io::Result<FileMetadata> {
+    self
+      .metadata
+      .blocking_call_with_sync(path.assert_utf8().to_string())
+      .map(FileMetadata::from)
+      .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+  }
 
-    fn symlink_metadata(&self, path: &std::path::Path) -> std::io::Result<FileMetadata> {
-        self.symlink_metadata.blocking_call_with_sync(path.assert_utf8().to_string()).map(FileMetadata::from).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-    }
+  fn symlink_metadata(&self, path: &std::path::Path) -> std::io::Result<FileMetadata> {
+    self
+      .symlink_metadata
+      .blocking_call_with_sync(path.assert_utf8().to_string())
+      .map(FileMetadata::from)
+      .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+  }
 
-    fn canonicalize(&self, path: &std::path::Path) -> std::io::Result<std::path::PathBuf> {
-        self.canonicalize.blocking_call_with_sync(path.assert_utf8().to_string()).map(|x| PathBuf::from(x)).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-    }
+  fn canonicalize(&self, path: &std::path::Path) -> std::io::Result<std::path::PathBuf> {
+    self
+      .canonicalize
+      .blocking_call_with_sync(path.assert_utf8().to_string())
+      .map(|x| PathBuf::from(x))
+      .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+  }
 }
