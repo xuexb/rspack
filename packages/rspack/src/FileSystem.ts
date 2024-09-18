@@ -1,8 +1,8 @@
-import util from "node:util";
 import path from 'node:path';
-import type { ThreadsafeNodeFS, ThreadsafeNodeInputFS, FileMetadata } from "@rspack/binding";
+import util from "node:util";
+import type { FileMetadata, ThreadsafeNodeFS, ThreadsafeNodeInputFS } from "@rspack/binding";
 
-import { InputFileSystem, type OutputFileSystem, mkdirp, rmrf } from "./util/fs";
+import { type InputFileSystem, type OutputFileSystem, mkdirp, rmrf } from "./util/fs";
 import { memoizeFn } from "./util/memoize";
 
 const NOOP_FILESYSTEM: ThreadsafeNodeFS = {
@@ -30,14 +30,14 @@ class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 		};
 		
 		this.canonicalize = (p:string)=> {
-			let linkedPath = fs!.readlinkSync!(p,{});
-			let absolutePath= path.resolve(path.dirname(p), linkedPath);
+			const linkedPath = fs!.readlinkSync!(p,{});
+			const absolutePath= path.resolve(path.dirname(p), linkedPath);
 			return absolutePath;
 			
 		};
 		this.metadata =(p:string) => {
 			const stat = fs.statSync!(p);
-			let res= {
+			const res= {
 				isFile: stat.isFile(),
 				isDir: stat.isDirectory(),
 				isSymlink: stat.isSymbolicLink()
@@ -46,7 +46,7 @@ class ThreadsafeReadableNodeFS implements ThreadsafeNodeInputFS{
 		};
 		this.symlinkMetadata = (p:string) => {
 			const stat = fs.lstatSync!(p);
-			let res = {
+			const res = {
 				isFile: stat.isFile(),
 				isDir: stat.isDirectory(),
 				isSymlink: stat.isSymbolicLink()

@@ -1,4 +1,4 @@
-use std::{sync::Arc};
+use std::sync::Arc;
 
 use napi_derive::napi;
 use rspack_core::{Resolve, ResolverFactory};
@@ -28,17 +28,19 @@ impl JsResolverFactory {
     Ok(Self {
       resolver_factory: None,
       loader_resolver_factory: None,
-      input_filesystem:fs
+      input_filesystem: fs,
     })
   }
 
   pub fn get_resolver_factory(&mut self, resolve_options: Resolve) -> Arc<ResolverFactory> {
-    
     match &self.resolver_factory {
       Some(resolver_factory) => resolver_factory.clone(),
-      
+
       None => {
-        let resolver_factory = Arc::new(ResolverFactory::new(resolve_options, self.input_filesystem.clone()));
+        let resolver_factory = Arc::new(ResolverFactory::new(
+          resolve_options,
+          self.input_filesystem.clone(),
+        ));
         self.resolver_factory = Some(resolver_factory.clone());
         resolver_factory
       }
@@ -49,7 +51,10 @@ impl JsResolverFactory {
     match &self.loader_resolver_factory {
       Some(resolver_factory) => resolver_factory.clone(),
       None => {
-        let resolver_factory = Arc::new(ResolverFactory::new(resolve_options, self.input_filesystem.clone()));
+        let resolver_factory = Arc::new(ResolverFactory::new(
+          resolve_options,
+          self.input_filesystem.clone(),
+        ));
         self.loader_resolver_factory = Some(resolver_factory.clone());
         resolver_factory
       }

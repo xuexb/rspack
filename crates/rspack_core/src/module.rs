@@ -30,7 +30,7 @@ pub struct BuildContext<'a> {
   pub runner_context: RunnerContext,
   pub plugin_driver: SharedPluginDriver,
   pub compiler_options: &'a CompilerOptions,
-  pub fs: Arc<dyn ReadableFileSystem>
+  pub fs: Arc<dyn ReadableFileSystem>,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]

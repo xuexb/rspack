@@ -6,8 +6,8 @@ extern crate napi_derive;
 extern crate rspack_allocator;
 
 use std::pin::Pin;
-use std::sync::Mutex;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use compiler::{Compiler, CompilerState, CompilerStateGuard};
 use napi::bindgen_prelude::*;
@@ -60,7 +60,8 @@ impl Rspack {
     let compiler_options: rspack_core::CompilerOptions = options
       .try_into()
       .map_err(|e| Error::from_reason(format!("{e}")))?;
-    let input_fs: Option<Arc<dyn ReadableFileSystem + Send + Sync >>= input_filesystem.map(|x| Arc::new(x) as _);
+    let input_fs: Option<Arc<dyn ReadableFileSystem + Send + Sync>> =
+      input_filesystem.map(|x| Arc::new(x) as _);
     let resolver_factory =
       (*resolver_factory_reference).get_resolver_factory(compiler_options.resolve.clone());
     let loader_resolver_factory = (*resolver_factory_reference)

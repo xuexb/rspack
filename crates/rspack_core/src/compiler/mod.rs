@@ -89,7 +89,7 @@ impl Compiler {
       }
     }
     let input_filesystem = input_filesystem.unwrap_or_else(|| Arc::new(NativeFileSystem {}));
-    
+
     let resolver_factory = resolver_factory.unwrap_or_else(|| {
       Arc::new(ResolverFactory::new(
         options.resolve.clone(),
@@ -121,7 +121,7 @@ impl Compiler {
         Some(module_executor),
         Default::default(),
         Default::default(),
-        input_filesystem.clone()
+        input_filesystem.clone(),
       ),
       output_filesystem,
       plugin_driver,
@@ -160,7 +160,7 @@ impl Compiler {
         Some(module_executor),
         Default::default(),
         Default::default(),
-        self.input_filesystem.clone()
+        self.input_filesystem.clone(),
       ),
     );
 

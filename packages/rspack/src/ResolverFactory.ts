@@ -1,7 +1,7 @@
 import * as binding from "@rspack/binding";
+import type { ThreadsafeReadableNodeFS } from "./FileSystem";
 import { Resolver } from "./Resolver";
 import { type Resolve, getRawResolve } from "./config";
-import { ThreadsafeReadableNodeFS } from "./FileSystem";
 
 type ResolveOptionsWithDependencyType = Resolve & {
 	dependencyCategory?: string;

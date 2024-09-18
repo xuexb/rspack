@@ -456,7 +456,7 @@ impl Module for ExternalModule {
   async fn build(
     &mut self,
     _build_context: BuildContext<'_>,
-    _: Option<&Compilation>
+    _: Option<&Compilation>,
   ) -> Result<BuildResult> {
     let (_, external_type) = self.get_request_and_external_type();
 

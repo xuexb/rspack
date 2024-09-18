@@ -5,8 +5,9 @@ use std::{
   path::PathBuf,
   sync::{atomic::AtomicU32, Arc},
 };
-use derivative::Derivative;
+
 use dashmap::DashSet;
+use derivative::Derivative;
 use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
 use rayon::prelude::*;
@@ -192,8 +193,8 @@ pub struct Compilation {
   pub modified_files: HashSet<PathBuf>,
   pub removed_files: HashSet<PathBuf>,
   make_artifact: MakeArtifact,
-  #[derivative(Debug="ignore")]
-  pub input_filesystem: Arc<dyn ReadableFileSystem>
+  #[derivative(Debug = "ignore")]
+  pub input_filesystem: Arc<dyn ReadableFileSystem>,
 }
 
 impl Compilation {
@@ -229,7 +230,7 @@ impl Compilation {
     module_executor: Option<ModuleExecutor>,
     modified_files: HashSet<PathBuf>,
     removed_files: HashSet<PathBuf>,
-    input_filesystem: Arc<dyn ReadableFileSystem>
+    input_filesystem: Arc<dyn ReadableFileSystem>,
   ) -> Self {
     Self {
       id: CompilationId::new(),
@@ -284,7 +285,7 @@ impl Compilation {
       make_artifact: Default::default(),
       modified_files,
       removed_files,
-      input_filesystem
+      input_filesystem,
     }
   }
 

@@ -142,7 +142,7 @@ pub struct NormalModule {
   build_info: Option<BuildInfo>,
   build_meta: Option<BuildMeta>,
   parsed: bool,
-  last_successful_build_meta: BuildMeta
+  last_successful_build_meta: BuildMeta,
 }
 
 #[derive(Debug, Clone)]
@@ -195,7 +195,7 @@ impl NormalModule {
     match_resource: Option<ResourceData>,
     resource_data: Arc<ResourceData>,
     resolve_options: Option<Box<Resolve>>,
-    loaders: Vec<BoxLoader>
+    loaders: Vec<BoxLoader>,
   ) -> Self {
     let module_type = module_type.into();
     let id = Self::create_id(&module_type, layer.as_ref(), &request);
@@ -229,7 +229,7 @@ impl NormalModule {
       build_meta: None,
       parsed: false,
       source_map_kind: SourceMapKind::empty(),
-      last_successful_build_meta: BuildMeta::default()
+      last_successful_build_meta: BuildMeta::default(),
     }
   }
 
@@ -382,7 +382,7 @@ impl Module for NormalModule {
   async fn build(
     &mut self,
     build_context: BuildContext<'_>,
-    _compilation: Option<&Compilation>
+    _compilation: Option<&Compilation>,
   ) -> Result<BuildResult> {
     self.clear_diagnostics();
 
@@ -414,7 +414,7 @@ impl Module for NormalModule {
       self.resource_data.clone(),
       Some(plugin.clone()),
       build_context.runner_context,
-      build_context.fs.clone()
+      build_context.fs.clone(),
     )
     .await;
     let (mut loader_result, ds) = match loader_result {

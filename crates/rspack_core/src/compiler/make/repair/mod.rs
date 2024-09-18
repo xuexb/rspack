@@ -71,7 +71,7 @@ impl MakeTaskContext {
       None,
       Default::default(),
       Default::default(),
-      self.fs.clone()
+      self.fs.clone(),
     );
     compilation.dependency_factories = self.dependency_factories.clone();
     compilation.swap_make_artifact(&mut self.artifact);

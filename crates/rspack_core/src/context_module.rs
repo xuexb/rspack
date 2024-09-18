@@ -870,7 +870,7 @@ impl Module for ContextModule {
   async fn build(
     &mut self,
     _build_context: BuildContext<'_>,
-    _: Option<&Compilation>
+    _: Option<&Compilation>,
   ) -> Result<BuildResult> {
     let (dependencies, blocks) = self.resolve_dependencies()?;
 
