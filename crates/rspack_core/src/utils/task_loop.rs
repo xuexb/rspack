@@ -1,10 +1,11 @@
 use std::{
   any::Any,
-  collections::VecDeque,
+  collections::{HashMap, VecDeque},
   sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
   },
+  time::Instant,
 };
 
 use rspack_error::Result;
@@ -65,20 +66,54 @@ pub fn run_task_loop_with_event<Ctx: 'static>(
   init_tasks: Vec<Box<dyn Task<Ctx>>>,
   before_task_run: impl Fn(&mut Ctx, Box<dyn Task<Ctx>>) -> Box<dyn Task<Ctx>>,
 ) -> Result<()> {
+  struct Timer {
+    timers: HashMap<usize, Instant>,
+  }
+
+  impl Timer {
+    fn new() -> Self {
+      Timer {
+        timers: HashMap::new(),
+      }
+    }
+
+    fn start(&mut self, label: usize) {
+      self.timers.insert(label, Instant::now());
+    }
+
+    fn end(&mut self, label: usize) {
+      if let Some(start) = self.timers.remove(&label) {
+        let duration = start.elapsed();
+        println!("{}: {:?}", label, duration);
+      } else {
+        println!("No timer found for label: {}", label);
+      }
+    }
+  }
+  let mut timer = Timer::new();
   // create channel to receive async task result
   let (tx, mut rx) = mpsc::unbounded_channel::<TaskResult<Ctx>>();
   // mark whether the task loop has been returned
   // the async task should not call `tx.send` after this mark to true
   let is_expected_shutdown: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
-  let mut queue: VecDeque<Box<dyn Task<Ctx>>> = VecDeque::from(init_tasks);
+  let mut task_id: usize = 0;
+  let mut queue: VecDeque<(usize, Box<dyn Task<Ctx>>)> =
+    VecDeque::from(init_tasks.into_iter().enumerate().collect::<Vec<_>>());
+  queue.iter().for_each(|(id, _)| {
+    timer.start(*id);
+  });
+  task_id += queue.len();
   let mut active_task_count = 0;
+
   tokio::task::block_in_place(|| loop {
     let task = queue.pop_front();
+    dbg!(queue.len());
     if task.is_none() && active_task_count == 0 {
       return Ok(());
     }
 
-    if let Some(task) = task {
+    if let Some((id, task)) = task {
+      timer.end(id);
       let task = before_task_run(ctx, task);
       match task.get_task_type() {
         TaskType::Async => {
@@ -95,7 +130,18 @@ pub fn run_task_loop_with_event<Ctx: 'static>(
         TaskType::Sync => {
           // merge sync task result directly
           match task.sync_run(ctx) {
-            Ok(r) => queue.extend(r),
+            Ok(r) => {
+              let r_with_id = r
+                .into_iter()
+                .enumerate()
+                .map(|(i, x)| (i + task_id, x))
+                .inspect(|x| {
+                  timer.start(x.0);
+                })
+                .collect::<Vec<_>>();
+              task_id = task_id + r_with_id.len();
+              queue.extend(r_with_id);
+            }
             Err(e) => {
               is_expected_shutdown.store(true, Ordering::Relaxed);
               return Err(e);
@@ -113,13 +159,23 @@ pub fn run_task_loop_with_event<Ctx: 'static>(
     } else {
       rx.try_recv()
     };
-
     match data {
       Ok(r) => {
         active_task_count -= 1;
         // merge async task result
         match r {
-          Ok(r) => queue.extend(r),
+          Ok(r) => {
+            let r_with_id = r
+              .into_iter()
+              .enumerate()
+              .map(|(i, x)| (i + task_id, x))
+              .inspect(|x| {
+                timer.start(x.0);
+              })
+              .collect::<Vec<_>>();
+            task_id += r_with_id.len();
+            queue.extend(r_with_id);
+          }
           Err(e) => {
             is_expected_shutdown.store(true, Ordering::Relaxed);
             return Err(e);

@@ -537,7 +537,7 @@ impl Stats<'_> {
     self
       .compilation
       .get_errors_sorted()
-      .map(|d| {
+      .map(|d: &rspack_error::Diagnostic| {
         let module_identifier = d.module_identifier();
         let (module_name, module_id) = module_identifier
           .as_ref()
