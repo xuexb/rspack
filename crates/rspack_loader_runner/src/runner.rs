@@ -4,7 +4,6 @@ use rspack_error::{error, IntoTWithDiagnosticArray, Result, TWithDiagnosticArray
 use rspack_fs::ReadableFileSystem;
 use rspack_sources::SourceMap;
 use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
-use tokio::task::spawn_blocking;
 
 use crate::{
   content::{AdditionalData, Content, ResourceData},
@@ -44,6 +43,7 @@ async fn process_resource<Context: Send>(
     {
       let resource_path_owned = resource_path.to_owned();
       // use spawn_blocking to avoid block,see https://docs.rs/tokio/latest/src/tokio/fs/read.rs.html#48
+      use tokio::task::spawn_blocking;
       let result = spawn_blocking(move || fs.read(resource_path_owned.as_std_path()))
         .await
         .map_err(|e| error!("{e}, spawn task failed"))?;

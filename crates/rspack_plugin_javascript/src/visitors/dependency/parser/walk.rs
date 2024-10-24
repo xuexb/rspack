@@ -433,7 +433,7 @@ impl<'parser> JavascriptParser<'parser> {
       | Expr::TsNonNull(_)
       | Expr::TsAs(_)
       | Expr::TsInstantiation(_)
-      | Expr::TsSatisfies(_) => unreachable!(),
+      | Expr::TsSatisfies(_) => {}
     }
   }
 
