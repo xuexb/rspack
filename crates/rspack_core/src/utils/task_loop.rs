@@ -10,7 +10,7 @@ use std::{
 use rspack_error::Result;
 use rspack_util::ext::AsAny;
 use tokio::{
-  runtime::Handle,
+  runtime::{Handle, Runtime},
   sync::mpsc::{self, error::TryRecvError},
 };
 
@@ -72,12 +72,13 @@ pub fn run_task_loop_with_event<Ctx: 'static>(
   let is_expected_shutdown: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
   let mut queue: VecDeque<Box<dyn Task<Ctx>>> = VecDeque::from(init_tasks);
   let mut active_task_count = 0;
-  tokio::task::block_in_place(|| loop {
+  let rt = Runtime::new().unwrap().handle().clone();
+  let _guard = rt.enter();
+  loop {
     let task = queue.pop_front();
     if task.is_none() && active_task_count == 0 {
       return Ok(());
     }
-
     if let Some(task) = task {
       let task = before_task_run(ctx, task);
       match task.get_task_type() {
@@ -85,7 +86,7 @@ pub fn run_task_loop_with_event<Ctx: 'static>(
           let tx = tx.clone();
           let is_expected_shutdown = is_expected_shutdown.clone();
           active_task_count += 1;
-          tokio::spawn(async move {
+          rt.spawn(async move {
             let r = task.async_run().await;
             if !is_expected_shutdown.load(Ordering::Relaxed) {
               tx.send(r).expect("failed to send error message");
@@ -131,7 +132,7 @@ pub fn run_task_loop_with_event<Ctx: 'static>(
         panic!("unexpected recv error")
       }
     }
-  })
+  }
 }
 
 #[cfg(test)]

@@ -3,7 +3,7 @@ pub mod build;
 pub mod factorize;
 pub mod process_dependencies;
 
-use std::sync::Arc;
+use std::{sync::Arc, thread};
 
 use rspack_error::Result;
 use rspack_fs::ReadableFileSystem;
@@ -140,6 +140,12 @@ pub fn repair(
     .collect::<Vec<_>>();
 
   let mut ctx = MakeTaskContext::new(compilation, artifact);
-  run_task_loop(&mut ctx, init_tasks)?;
-  Ok(ctx.transform_to_make_artifact())
+  let new_ctx = thread::spawn(move || {
+    run_task_loop(&mut ctx, init_tasks).unwrap();
+    ctx
+  })
+  .join()
+  .unwrap();
+
+  Ok(new_ctx.transform_to_make_artifact())
 }
