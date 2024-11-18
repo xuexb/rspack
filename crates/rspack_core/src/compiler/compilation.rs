@@ -29,7 +29,7 @@ use super::{
   module_executor::ModuleExecutor,
 };
 use crate::{
-  build_chunk_graph::build_chunk_graph,
+  build_chunk_graph::{build_chunk_graph, build_chunk_graph_new},
   cache::Cache,
   cgm_hash_results::CgmHashResults,
   cgm_runtime_requirement_results::CgmRuntimeRequirementsResults,
@@ -1227,7 +1227,8 @@ impl Compilation {
 
     let start = logger.time("create chunks");
     use_code_splitting_cache(self, |compilation| async {
-      build_chunk_graph(compilation)?;
+      // build_chunk_graph(compilation)?;
+      build_chunk_graph_new(compilation)?;
       Ok(compilation)
     })
     .await?;
