@@ -71,7 +71,6 @@ impl FileType {
 pub struct MemoryFileSystem {
   files: Mutex<HashMap<Utf8PathBuf, FileType>>,
 }
-impl FileSystem for MemoryFileSystem {}
 
 impl MemoryFileSystem {
   pub fn clear(&self) {
@@ -222,6 +221,7 @@ impl WritableFileSystem for MemoryFileSystem {
   }
 }
 
+#[async_trait::async_trait]
 impl ReadableFileSystem for MemoryFileSystem {
   fn read(&self, path: &Utf8Path) -> Result<Vec<u8>> {
     let files = self.files.lock().expect("should get lock");
@@ -247,9 +247,8 @@ impl ReadableFileSystem for MemoryFileSystem {
     let path = dunce::canonicalize(path)?;
     Ok(path.assert_utf8())
   }
-  fn async_read<'a>(&'a self, file: &'a Utf8Path) -> BoxFuture<'a, Result<Vec<u8>>> {
-    let fut = async move { ReadableFileSystem::read(self, file) };
-    Box::pin(fut)
+  async fn async_read(&self, file: &Utf8Path) -> Result<Vec<u8>> {
+    ReadableFileSystem::read(self, file)
   }
 }
 

@@ -23,7 +23,11 @@ pub struct ThreadsafeNodeFS {
   #[napi(ts_type = "(name: string) => Promise<NodeFsStats | void> | NodeFsStats | void")]
   pub stat: ThreadsafeFunction<String, Either<NodeFsStats, ()>>,
   #[napi(ts_type = "(name: string) => Promise<NodeFsStats | void> | NodeFsStats | void")]
+  pub symlink_stat: ThreadsafeFunction<String, Either<NodeFsStats, ()>>,
+  #[napi(ts_type = "(name: string) => Promise<NodeFsStats | void> | NodeFsStats | void")]
   pub lstat: ThreadsafeFunction<String, Either<NodeFsStats, ()>>,
+  #[napi(ts_type = "(name: string) => Promise<string> | string")]
+  pub canonicalize: ThreadsafeFunction<String, Either<NodeFsStats, ()>>,
 }
 
 #[napi(object, object_to_js = false)]

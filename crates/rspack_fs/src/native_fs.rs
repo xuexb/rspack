@@ -7,7 +7,6 @@ use crate::{Error, FileMetadata, FileSystem, ReadableFileSystem, Result, Writabl
 
 #[derive(Debug)]
 pub struct NativeFileSystem;
-impl FileSystem for NativeFileSystem {}
 #[async_trait::async_trait]
 impl WritableFileSystem for NativeFileSystem {
   async fn create_dir(&self, dir: &Utf8Path) -> Result<()> {
@@ -59,7 +58,7 @@ impl WritableFileSystem for NativeFileSystem {
     Box::pin(fut)
   }
 }
-
+#[async_trait::async_trait]
 impl ReadableFileSystem for NativeFileSystem {
   fn read(&self, path: &Utf8Path) -> Result<Vec<u8>> {
     fs::read(path).map_err(Error::from)
@@ -79,8 +78,7 @@ impl ReadableFileSystem for NativeFileSystem {
     let path = dunce::canonicalize(path)?;
     Ok(path.assert_utf8())
   }
-  fn async_read<'a>(&'a self, file: &'a Utf8Path) -> BoxFuture<'a, Result<Vec<u8>>> {
-    let fut = async move { tokio::fs::read(file).await.map_err(Error::from) };
-    Box::pin(fut)
+  async fn async_read(&self, file: &Utf8Path) -> Result<Vec<u8>> {
+    tokio::fs::read(file).await.map_err(Error::from)
   }
 }

@@ -1,12 +1,12 @@
 use async_trait::async_trait;
-use futures::future::BoxFuture;
-use napi::{bindgen_prelude::Either3, Either};
-use rspack_fs::{FileMetadata, WritableFileSystem};
+use futures::{executor::block_on, future::BoxFuture};
+use napi::{bindgen_prelude::Either3, tokio::task::block_in_place, Either};
+use rspack_fs::{FileMetadata, ReadableFileSystem, WritableFileSystem};
 use rspack_paths::Utf8Path;
 
 use crate::node::ThreadsafeNodeFS;
 
-pub struct NodeFileSystem(ThreadsafeNodeFS);
+pub struct NodeFileSystem(pub(crate) ThreadsafeNodeFS);
 
 impl std::fmt::Debug for NodeFileSystem {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -173,5 +173,91 @@ impl WritableFileSystem for NodeFileSystem {
       }
     };
     Box::pin(fut)
+  }
+}
+
+#[async_trait::async_trait]
+impl ReadableFileSystem for NodeFileSystem {
+  /// See [std::fs::read]
+  fn read(&self, path: &Utf8Path) -> Result<Vec<u8>> {
+    let f = self.async_read(path);
+    pollster::block_on(f)
+  }
+
+  /// See [std::fs::metadata]
+  fn metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
+    let f = self.async_metadata(path);
+    pollster::block_on(f)
+  }
+
+  /// See [std::fs::symlink_metadata]
+  fn symlink_metadata(&self, path: &Utf8Path) -> Result<FileMetadata> {
+    let f = self.async_symlink_metadata(path);
+    pollster::block_on(f)
+  }
+
+  /// See [std::fs::canonicalize]
+  fn canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf> {
+    let f = self.async_canonicalize(path);
+    pollster::block_on(f)
+  }
+  fn async_canonicalize(&self, path: &Utf8Path) -> Result<Utf8PathBuf> {
+    todo!()
+  }
+  async fn async_read(&self, path: &Utf8Path) -> rspack_fs::Result<Vec<u8>> {
+    let file = file.as_str().to_string();
+    let res = self.0.read_file.call(file).await.map_err(|e| {
+      rspack_fs::Error::Io(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        e.to_string(),
+      ))
+    })?;
+
+    match res {
+      Either3::A(data) => Ok(data.to_vec()),
+      Either3::B(str) => Ok(str.into_bytes()),
+      Either3::C(_) => Err(rspack_fs::Error::Io(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        "output file system call read file failed",
+      ))),
+    }
+  }
+
+  async fn async_metadata(&self, path: &Utf8Path) -> rspack_fs::Result<FileMetadata> {
+    let file = file.as_str().to_string();
+    let res = self.0.stat.call(file).await.map_err(|e| {
+      rspack_fs::Error::Io(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        e.to_string(),
+      ))
+    })?;
+    match res {
+      Either::A(stat) => Ok(FileMetadata::from(stat)),
+      Either::B(_) => Err(rspack_fs::Error::Io(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        "output file system call stat failed",
+      ))),
+    }
+  }
+
+  async fn async_symlink_metadata(&self, path: &Utf8Path) -> rspack_fs::Result<FileMetadata> {
+    let file = file.as_str().to_string();
+    let res = self.0.symlink_stat.call(file).await.map_err(|e| {
+      rspack_fs::Error::Io(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        e.to_string(),
+      ))
+    })?;
+    match res {
+      Either::A(stat) => Ok(FileMetadata::from(stat)),
+      Either::B(_) => Err(rspack_fs::Error::Io(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        "output file system call stat failed",
+      ))),
+    }
+  }
+
+  fn canonicalize(&self, path: &Utf8Path) -> rspack_fs::Result<rspack_paths::Utf8PathBuf> {
+    todo!()
   }
 }
