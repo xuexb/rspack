@@ -870,7 +870,7 @@ export class Compiler {
     // (undocumented)
     inputFileSystem: InputFileSystem | null;
     // (undocumented)
-    intermediateFileSystem: any;
+    intermediateFileSystem: IntermediateFileSystem | null;
     // (undocumented)
     isChild(): boolean;
     // (undocumented)
@@ -2418,6 +2418,15 @@ type InputFileSystem = {
 };
 
 // @public (undocumented)
+type IntermediateFileSystem = OutputFileSystem & IntermediateFileSystemExtras & InputFileSystem;
+
+// @public (undocumented)
+interface IntermediateFileSystemExtras {
+    // (undocumented)
+    rename: (arg0: string, arg1: string, arg2: (arg0?: null | NodeJS.ErrnoException) => void) => void;
+}
+
+// @public (undocumented)
 type INVALID = {
     status: "aborted";
 };
@@ -3727,8 +3736,8 @@ export class MultiCompiler {
     get inputFileSystem(): InputFileSystem;
     set inputFileSystem(value: InputFileSystem);
     // (undocumented)
-    get intermediateFileSystem(): void;
-    set intermediateFileSystem(value: void);
+    get intermediateFileSystem(): IntermediateFileSystem;
+    set intermediateFileSystem(value: IntermediateFileSystem);
     // (undocumented)
     get options(): RspackOptionsNormalized_2[] & MultiCompilerOptions;
     // (undocumented)

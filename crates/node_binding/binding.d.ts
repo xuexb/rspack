@@ -2117,4 +2117,5 @@ export interface ThreadsafeNodeFS {
   readFile: (name: string) => Promise<Buffer | string | void> | Buffer | string | void
   stat: (name: string) => Promise<NodeFsStats | void> | NodeFsStats | void
   lstat: (name: string) => Promise<NodeFsStats | void> | NodeFsStats | void
+  renameFile: (from: string, to: string) => Promise<void> | void
 }

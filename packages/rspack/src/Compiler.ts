@@ -69,6 +69,7 @@ import type {
 } from "./config";
 import type {
 	InputFileSystem,
+	IntermediateFileSystem,
 	OutputFileSystem,
 	WatchFileSystem
 } from "./util/fs";
@@ -145,7 +146,7 @@ class Compiler {
 	watching?: Watching;
 
 	inputFileSystem: InputFileSystem | null;
-	intermediateFileSystem: any;
+	intermediateFileSystem: IntermediateFileSystem | null;
 	outputFileSystem: OutputFileSystem | null;
 	watchFileSystem: WatchFileSystem | null;
 
